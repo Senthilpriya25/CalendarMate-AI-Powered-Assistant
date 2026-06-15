@@ -1,0 +1,950 @@
+{
+  "name": "CalendarMate - AI Productivity Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "bc03ef3a-001d-45a2-a536-44daffaad4cc",
+      "name": "Chat Trigger",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        624
+      ],
+      "webhookId": "calendarmate-chat"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are the Routing Agent for CalendarMate.\n\nYour task is to classify the user's message into one of five categories.\n\nYou MUST output ONLY one of these exact uppercase strings:\nBRIEFING\nSCHEDULING\nEMAIL\nFOLLOWUP\nCLARIFY\n\nNo other text. No punctuation. No markdown. No explanations.\n\nBRIEFING = day summary, calendar overview, meetings today or tomorrow, weekly schedule, conflicts\nSCHEDULING = book, schedule, create, cancel, reschedule, find a time\nEMAIL = read, check, summarize, triage emails or inbox\nFOLLOWUP = meeting notes, action items, post-meeting summary\nCLARIFY = intent unclear or missing key info\n\nIf unsure between BRIEFING and SCHEDULING, choose SCHEDULING when a new event is mentioned.\n\nOutput ONLY the keyword.\n"
+        }
+      },
+      "id": "9bbc4ec8-8904-441e-8570-d2a2fa7d79f0",
+      "name": "Orchestrator Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        224,
+        624
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "maxTokens": 20,
+          "temperature": 0
+        }
+      },
+      "id": "61c9c885-6fc9-4573-8ab2-9f4290587acd",
+      "name": "Orchestrator LLM",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        304,
+        848
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "GsmhQXCRIUHBAk9E",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output }}",
+                    "rightValue": "BRIEFING",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    },
+                    "id": "d08f822c-b1af-4867-9a81-cb9822ea9361"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Briefing"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output }}",
+                    "rightValue": "SCHEDULING",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    },
+                    "id": "6c6fbeb6-9eab-47a2-986f-09578f1334bc"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Scheduling"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output }}",
+                    "rightValue": "EMAIL",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    },
+                    "id": "19e79615-8973-4d78-a175-c01fa450da86"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Email"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output }}",
+                    "rightValue": "FOLLOWUP",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    },
+                    "id": "b0bdc819-2906-46a5-9afa-b600b44da42b"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "FollowUp"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output }}",
+                    "rightValue": "CLARIFY",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    },
+                    "id": "24d73722-b7df-49be-ac66-6bd8a4d649b6"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Clarify"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "19fc9001-cb18-4293-9807-a1728f70dd99",
+      "name": "Intent Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        576,
+        576
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "primary",
+          "mode": "list",
+          "cachedResultName": "Primary Calendar"
+        },
+        "returnAll": true,
+        "timeMin": "={{ $now.startOf('day').toISO() }}",
+        "timeMax": "={{ $now.endOf('day').toISO() }}",
+        "options": {
+          "orderBy": "startTime"
+        }
+      },
+      "id": "3de0e42c-a1a8-4fdb-9faa-46af5cf14668",
+      "name": "Get Today's Events",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        800,
+        16
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "xl4PCi4aHrcA4ewn",
+          "name": "Google Calendar OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "primary",
+          "mode": "list",
+          "cachedResultName": "Primary Calendar"
+        },
+        "returnAll": true,
+        "timeMin": "={{ $now.startOf('week').toISO() }}",
+        "timeMax": "={{ $now.endOf('week').toISO() }}",
+        "options": {
+          "orderBy": "startTime"
+        }
+      },
+      "id": "8362e36b-b777-453b-b0af-bdb474ab816e",
+      "name": "Get Week Events",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        800,
+        208
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "xl4PCi4aHrcA4ewn",
+          "name": "Google Calendar OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "agent": "conversationalAgent",
+        "promptType": "define",
+        "text": "=User request: {{ $('Chat Trigger').item.json.chatInput }}\n\nCalendar events data: {{ JSON.stringify($json) }}",
+        "options": {
+          "systemMessage": "ROLE: You are a daily briefing assistant for a PM/TPM at ServionIQ.\n\nINPUT: (1) The user's briefing request. (2) A JSON array of Google Calendar events.\n\nOUTPUT: A structured briefing with these sections:\n\n📅 TODAY'S MEETINGS\n- List each meeting: time (readable format, e.g. 10:00 AM – 10:30 AM), title, attendees (first name or email)\n- If no meetings: 'Your calendar is clear.'\n\n⚠️ CONFLICTS\n- List any overlapping time slots with both meeting names and times\n- If no conflicts: 'No conflicts detected.'\n\n🎯 FOCUS BLOCKS\n- List gaps of 30+ minutes between meetings as available focus time\n- Example: '2:00 PM – 4:00 PM: 2-hour focus block'\n\n📧 SUGGESTED PREP\n- For each meeting with external attendees, suggest 1 prep action (e.g. 'Review last email thread with John')\n\nRULES:\n1. ONLY use events from the JSON input. Do NOT invent any meetings, attendees, or times.\n2. If the event JSON is empty or null, say 'Your calendar appears to be clear. Note: this may be a permissions issue if you expected meetings.'\n3. Format all times in a readable 12-hour format (e.g. 2:30 PM, not 14:30:00Z).\n4. Never fabricate attendee names or email addresses not present in the data.\n5. For 'tomorrow' or specific day requests, note that you are showing data for the date range provided.\n6. Keep the briefing concise — no more than 300 words total.\n7. If the user asks about a specific day not covered by the data, say 'I only have data for [date range]. Please ask me to check a specific date.'"
+        }
+      },
+      "id": "58ad3937-4805-4808-9d08-bd7ca2295be8",
+      "name": "Briefing Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1024,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "maxTokens": 800,
+          "temperature": 0.2
+        }
+      },
+      "id": "fa9c9543-f4c0-47ac-8a3e-7c03c1069cef",
+      "name": "Briefing LLM",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        1104,
+        224
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "GsmhQXCRIUHBAk9E",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "primary",
+          "mode": "list",
+          "cachedResultName": "Primary Calendar"
+        },
+        "returnAll": true,
+        "timeMin": "={{ $now.toISO() }}",
+        "timeMax": "={{ $now.plus({days: 7}).toISO() }}",
+        "options": {
+          "orderBy": "startTime"
+        }
+      },
+      "id": "9d226124-dda9-48e8-9c4d-46f42b65f368",
+      "name": "Check Availability",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        800,
+        512
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "xl4PCi4aHrcA4ewn",
+          "name": "Google Calendar OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "agent": "conversationalAgent",
+        "promptType": "define",
+        "text": "=User scheduling request: {{ $('Chat Trigger').item.json.chatInput }}\n\nExisting calendar events (next 7 days): {{ JSON.stringify($json) }}",
+        "options": {
+          "systemMessage": "ROLE: You are a smart scheduling assistant for a PM/TPM at ServionIQ.\n\nINPUT: (1) The user's scheduling request in natural language. (2) A JSON array of existing calendar events for the next 7 days.\n\nOUTPUT depends on the situation:\n\nSCENARIO A — All info present and slot is free:\nRespond with a confirmation summary:\n'I can schedule [meeting title] with [attendees] on [day] at [time] for [duration]. A Google Meet link will be included. Shall I confirm this?'\n\nSCENARIO B — Requested slot has a conflict:\nName the conflicting meeting and propose 2-3 alternative open time slots in the same day or next business day.\n\nSCENARIO C — Missing required information:\nAsk for ONLY the single missing piece. Do not ask multiple questions at once.\n- Missing attendee → 'Who should I invite to this meeting?'\n- Missing time → 'What time works for you?'\n- Missing date → 'Which day did you have in mind?'\n- Missing duration → 'How long should the meeting be? (defaulting to 30 minutes if not specified is also acceptable)'\n\nSCENARIO D — Unusual request (weekend, very early/late hour):\nFlag it clearly: 'Note: [day/time] is a [weekend / outside typical hours (before 8am or after 7pm)]. Would you still like me to schedule this?'\n\nSCENARIO E — User confirms a proposed slot (message contains 'yes', 'confirm', 'go ahead', 'sounds good', 'book it'):\nRespond: 'EVENT_CREATE:[title]|[attendee_emails_comma_separated]|[start_ISO]|[end_ISO]|[description]'\nThis is the signal to trigger the calendar creation node.\n\nRULES:\n1. Never create or confirm an event if the attendee is missing. Ask for it.\n2. Never invent attendee email addresses. Use only what the user provided.\n3. Do not book a slot already occupied by another event in the JSON data.\n4. Default meeting duration to 30 minutes if not specified.\n5. All proposed times must be on weekdays between 8:00 AM and 6:00 PM unless user explicitly requests otherwise.\n6. Always include a note that a Google Meet link will be generated.\n7. If the user message is just 'Book a meeting' with no other details, ask: 'Sure! Who would you like to meet with, and when?'\n8. Working hours assumption: 9:00 AM – 6:00 PM, Monday–Friday.\n\nEXAMPLES OF GOOD BEHAVIOR:\n- User: 'Book something for Sunday at 6am' → Flag weekend + unusual hour, ask for confirmation\n- User: 'Schedule with john but I forgot his email' → Ask for John's email\n- User: 'Set up a sync with design team' → Ask for specific attendees and preferred time\n- User: 'Yes, confirm the 2pm slot' → Output EVENT_CREATE signal"
+        }
+      },
+      "id": "83ccfb47-ffdb-4d9e-9c37-5b97fc24dead",
+      "name": "Scheduler Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1024,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "maxTokens": 600,
+          "temperature": 0.1
+        }
+      },
+      "id": "77864e97-dee4-435e-acaa-9bbfabc57da4",
+      "name": "Scheduler LLM",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        1104,
+        736
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "CbJV71bggctcH9rE",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "EVENT_CREATE:",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "33878823-9fbf-4f07-90ad-71b042b11451",
+      "name": "Confirmation Check",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1376,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "primary",
+          "mode": "list",
+          "cachedResultName": "Primary Calendar"
+        },
+        "start": "={{ $json.output.split('EVENT_CREATE:')[1].split('|')[2] }}",
+        "end": "={{ $json.output.split('EVENT_CREATE:')[1].split('|')[3] }}",
+        "additionalFields": {
+          "attendees": "={{ $json.output.split('EVENT_CREATE:')[1].split('|')[1].split(',').map(e => ({email: e.trim()})) }}",
+          "description": "={{ $json.output.split('EVENT_CREATE:')[1].split('|')[4] }}\n\nCreated by CalendarMate AI Assistant.",
+          "summary": "={{ $json.output.split('EVENT_CREATE:')[1].split('|')[0] }}"
+        }
+      },
+      "id": "53d3f0f8-f4d7-4973-b779-0dce9834fc8a",
+      "name": "Create Calendar Event",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1664,
+        384
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "xl4PCi4aHrcA4ewn",
+          "name": "Google Calendar OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 25,
+        "filters": {
+          "q": "is:unread newer_than:1d"
+        }
+      },
+      "id": "2f6ce247-c5fd-4ef4-9918-37b9dfcd7871",
+      "name": "Fetch Unread Emails",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1376,
+        832
+      ],
+      "webhookId": "8c0bd656-e63b-4b7d-aaeb-be60dbea4833",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "j7ACzdQpSuvqIgY6",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=User request: {{ $('Chat Trigger').item.json.chatInput }}\n\nEmail data (last 24 hours, unread): {{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "8df56434-65ce-4e88-8bbd-8db93e7c107c",
+      "name": "Email Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1600,
+        720
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "model": "gpt-4.1-mini",
+        "options": {
+          "maxTokens": 700,
+          "temperature": 0.2
+        }
+      },
+      "id": "d7d79dcd-1419-4017-b211-e34a3baa4c92",
+      "name": "Email LLM",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        1680,
+        944
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "CbJV71bggctcH9rE",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 10,
+        "filters": {
+          "q": "subject:(meeting OR standup OR sync OR call OR discussion) newer_than:3d"
+        }
+      },
+      "id": "9535a9eb-d695-4071-b1f2-792f48bbce03",
+      "name": "Fetch Meeting Emails",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1376,
+        1232
+      ],
+      "webhookId": "5a18114b-6940-403d-9a63-c4c903a0bd7a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "j7ACzdQpSuvqIgY6",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "agent": "conversationalAgent",
+        "promptType": "define",
+        "text": "=User request: {{ $('Chat Trigger').item.json.chatInput }}\n\nMeeting-related email context: {{ JSON.stringify($json) }}",
+        "options": {
+          "systemMessage": "ROLE: You are a meeting follow-up generator for a PM/TPM at ServionIQ.\n\nINPUT: (1) The user's follow-up request (may include pasted meeting notes or transcript). (2) Recent meeting-related email threads for context.\n\nOUTPUT: A complete follow-up package with these sections:\n\n📝 MEETING SUMMARY\n2-3 sentences summarizing what was discussed and decided. Only include decisions explicitly mentioned in the input.\n\n✅ ACTION ITEMS\nFormat each as:\n- [ ] [Action description] — Owner: [Name] | Due: [Date if mentioned, else 'TBD']\nList 3–7 action items. Only assign owners to people explicitly named in the notes.\n\n📧 DRAFT FOLLOW-UP EMAIL\nSubject: Follow-up: [Meeting Title] – [Date]\n\nHi team,\n\nThank you for joining [meeting name] today. Here's a summary of our discussion and next steps:\n\n[2-sentence summary]\n\nAction Items:\n[numbered list of action items with owners]\n\nPlease let me know if I've missed anything.\n\nBest,\n[PM/TPM Name]\n\nRULES:\n1. If the user provides no meeting notes or transcript, respond: 'I need meeting notes or a transcript to generate a follow-up. Please paste your notes and I will generate the summary and action items.'\n2. Only assign action items to people explicitly mentioned in the input. Never invent owners.\n3. Only include decisions that were explicitly stated — never assume or infer outcomes.\n4. If a due date is not mentioned, mark it as 'TBD'.\n5. Keep the draft email professional but concise — under 200 words.\n6. If attendee names are mentioned in the email context, use those for the email greeting and action item owners.\n7. Do NOT fabricate meeting outcomes, metrics, or decisions that were not stated.\n\nEXAMPLES OF GOOD BEHAVIOR:\n- User pastes no notes → Ask for notes before generating anything\n- User pastes notes with no owner mentioned → List action item but write 'Owner: TBD'\n- User says 'Generate follow-up for my standup' with no other info → Ask for the meeting notes"
+        }
+      },
+      "id": "6e962b03-0c72-4523-b4a9-311afa35b372",
+      "name": "Follow-Up Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1600,
+        1120
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "maxTokens": 900,
+          "temperature": 0.3
+        }
+      },
+      "id": "ff9558c4-7fee-4bd9-aa69-04834694ae4d",
+      "name": "Follow-Up LLM",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        1680,
+        1344
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "GsmhQXCRIUHBAk9E",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "agent": "conversationalAgent",
+        "promptType": "define",
+        "text": "={{ $('Chat Trigger').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "ROLE: You are CalendarMate, an AI productivity assistant.\n\nThe user's request was unclear. Your job is to ask one specific clarifying question to understand what they need.\n\nCalendarMate can help with:\n- Daily briefings and calendar summaries\n- Scheduling and booking meetings\n- Email triage and summarization  \n- Meeting follow-ups and action items\n\nAsk ONLY one question. Keep it friendly and brief. Suggest the options above if helpful.\n\nEXAMPLE: 'Happy to help! Are you looking to (1) see your calendar, (2) schedule a meeting, (3) check your emails, or (4) generate a meeting follow-up?'"
+        }
+      },
+      "id": "a2059472-9b09-4a8e-a5af-a0bb6a15b850",
+      "name": "Clarify Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1600,
+        1632
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "maxTokens": 150,
+          "temperature": 0.5
+        }
+      },
+      "id": "f79be7d2-35c3-467b-b425-2b80b6e292eb",
+      "name": "Clarify LLM",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        1680,
+        1856
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "GsmhQXCRIUHBAk9E",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Response Formatter\n// Collects output from whichever agent ran and formats it for the chat interface\n\nconst items = $input.all();\nconst item = items[0];\n\nlet responseText = '';\nlet source = 'unknown';\n\n// Try to get output from various possible field names\nif (item.json.output) {\n  responseText = item.json.output;\n  source = 'agent';\n} else if (item.json.text) {\n  responseText = item.json.text;\n  source = 'text';\n} else if (item.json.message) {\n  responseText = item.json.message;\n  source = 'message';\n} else if (item.json.htmlLink) {\n  // This is a calendar event creation response\n  responseText = `✅ Meeting created successfully!\\n\\n📅 **Event:** ${item.json.summary || 'New Meeting'}\\n🕐 **Time:** ${item.json.start?.dateTime || 'TBD'} – ${item.json.end?.dateTime || 'TBD'}\\n🔗 **Google Meet:** ${item.json.hangoutLink || 'Link will be in your calendar invite'}\\n📧 **Calendar invite sent to all attendees.**\\n\\nView it here: ${item.json.htmlLink}`;\n  source = 'calendar_create';\n} else {\n  responseText = 'I processed your request but could not generate a response. Please try again.';\n}\n\nreturn [{\n  json: {\n    response: responseText,\n    source: source,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "9e2b6fef-afc2-442b-9197-f665037e1023",
+      "name": "Response Formatter",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1952,
+        704
+      ]
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        368
+      ],
+      "id": "debbb04c-770d-47a3-aa47-5ee307e34e9d",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "setInputs",
+        "inputs": {
+          "values": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.evaluation",
+      "typeVersion": 4.8,
+      "position": [
+        178.06703210072388,
+        0
+      ],
+      "id": "8065c3fa-e82e-419a-9355-672017f82b56",
+      "name": "Evaluation"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Chat Trigger": {
+      "main": [
+        [
+          {
+            "node": "Orchestrator Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Orchestrator Agent": {
+      "main": [
+        [
+          {
+            "node": "Intent Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Orchestrator LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Orchestrator Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Intent Router": {
+      "main": [
+        [
+          {
+            "node": "Get Today's Events",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Week Events",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Check Availability",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Unread Emails",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Meeting Emails",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Clarify Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Today's Events": {
+      "main": [
+        [
+          {
+            "node": "Briefing Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Week Events": {
+      "main": [
+        [
+          {
+            "node": "Briefing Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Briefing Agent": {
+      "main": [
+        [
+          {
+            "node": "Response Formatter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Briefing LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Briefing Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Availability": {
+      "main": [
+        [
+          {
+            "node": "Scheduler Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scheduler Agent": {
+      "main": [
+        [
+          {
+            "node": "Confirmation Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scheduler LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Scheduler Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirmation Check": {
+      "main": [
+        [
+          {
+            "node": "Create Calendar Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Response Formatter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Calendar Event": {
+      "main": [
+        [
+          {
+            "node": "Response Formatter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Unread Emails": {
+      "main": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Agent": {
+      "main": [
+        [
+          {
+            "node": "Response Formatter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Meeting Emails": {
+      "main": [
+        [
+          {
+            "node": "Follow-Up Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Follow-Up Agent": {
+      "main": [
+        [
+          {
+            "node": "Response Formatter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Follow-Up LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Follow-Up Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clarify Agent": {
+      "main": [
+        [
+          {
+            "node": "Response Formatter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clarify LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Clarify Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "f977129b-4df7-4efc-934f-57d7d6fdd213",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "787fd89055c794eca0301377efd82c0e5471bd377f55941be91aee9cf1a74fc2"
+  },
+  "nodeGroups": [],
+  "id": "DqjxcYBRGA3Ao2TQ",
+  "tags": [
+    {
+      "name": "Capstone",
+      "id": "RLEIXdheOT1w8WKd",
+      "updatedAt": "2026-06-11T00:25:03.440Z",
+      "createdAt": "2026-06-11T00:25:03.440Z"
+    },
+    {
+      "name": "CalendarMate",
+      "id": "ea3cN6olxyvJ3IFw",
+      "updatedAt": "2026-06-11T00:25:03.470Z",
+      "createdAt": "2026-06-11T00:25:03.470Z"
+    }
+  ]
+}
